@@ -123,7 +123,7 @@ radon.inits <- function (){
 radon.parameters <- c ("a", "mu.a", "sigma.y", "sigma.a") # Specifies the name of the parameters to be monitored and returned by the model. These are the same parameters for which initial values were defined.
 
 
-BUGS_DIR <- "C:/Users/conno/OneDrive - University of Georgia/Amy_Connor_Zambia/Gelman_MultilevelModeling/Gelman_MultModel/code/radon.multilevel.nopred.txt"
+BUGS_DIR <- "C:/Users/conno/Documents/repos/Gelman_MultModel/Gelman_MultModel/code/radon.multilevel.nopred.txt"
 
 
 mlm.radon.nopred <- bugs (radon.data, radon.inits, radon.parameters,  n.chains=3, 
