@@ -1,0 +1,193 @@
+---
+title: "Data Analysis Using Regression and Multilevel/Hierarchical Models"
+author: "Ross, Connor"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Notes/Practice code for book: Data Analysis Using Regression and Multilevel/Hierarchical Models
+
+Book Authors: Andrew Gelman & Jennifer Hill
+
+Data and some code from: http://www.stat.columbia.edu/~gelman/arm/software/
+
+
+
+# Loading Basic Package(s)
+
+```{r Loading Basic Packages, echo=TRUE}
+# Loading package(s)
+
+library(tidyverse) # For code syntax and other basic tools.
+
+
+
+```
+
+
+
+# Chapter 12 (pg 251)
+
+## 12.2
+
+Getting the data and successfully loading it into r from dta file format. Skipping pooling content.
+```{r}
+# Loading the raw data (radon).
+
+raw_radon_cty <- read.table(here::here('data',
+                                       'raw_data',
+                                       'radon',
+                                       'cty.dat'),
+                            header = TRUE,
+                            sep = ",")
+
+
+
+raw_radon_srrs2 <- read.table(here::here('data',
+                                       'raw_data',
+                                       'radon',
+                                       'srrs2.dat'),
+                            header = TRUE,
+                            sep = ",")
+
+
+# Checking the data
+
+head(raw_radon_cty)
+
+summary(raw_radon_cty)
+
+head(raw_radon_srrs2)
+
+summary(raw_radon_srrs2)
+
+
+```
+
+
+
+
+
+```{r}
+
+# Pulling out response and predictors. See book section 12.2 for specifics.
+
+### Only interested in state = MN. Log response.
+
+
+mn <- raw_radon_srrs2$state=="MN"
+radon <- raw_radon_srrs2$activity[mn]
+log.radon <- log (ifelse (radon==0, .1, radon)) # Replaces any 0 with 0.1 so that a log transformation can be performed.
+floor <- raw_radon_srrs2$floor[mn]       # 0 for basement, 1 for first floor
+n <- length(radon)
+y <- log.radon
+x <- floor
+  
+
+# get county index variable
+county.name <- as.vector(raw_radon_srrs2$county[mn]) # Pulls a list of each county name.
+uniq <- unique(county.name) # Reduces the list to non-repeats.
+J <- length(uniq) # Gets the number of unique counties.
+county <- rep (NA, J) # Creates a new vector county of length J filled with NA values. This vector will be used to store numerical codes for each county.
+for (i in 1:J){
+  county[county.name==uniq[i]] <- i
+} # Loop that assigns a unique numerical code (from 1 to J) to each county. It iterates through the unique county names and, for each name, assigns the corresponding code (i) to all elements in the county vector where county.name matches that unique name.
+
+
+
+
+
+
+# no predictors
+ybarbar = mean(y) # Gets the mean of 'y' which is the log of radon levels. Provides a baseline measure of radon levels.
+
+sample.size <- as.vector (table (county)) # Pulls the number of observations for each county. and creates a table of county for each county and converts it to a vector. 
+sample.size.jittered <- sample.size*exp (runif (J, -.1, .1)) # Adds some random jitter to sample size.
+cty.mns = tapply(y,county,mean) # Gets mean of log-trans radon levels for each county.
+cty.vars = tapply(y,county,var) # Gets variance of log-transformed radon levels for each county.
+cty.sds = mean(sqrt(cty.vars[!is.na(cty.vars)]))/sqrt(sample.size) # Estimates the standard deviation of county-level means. First, calculates the square root of the variances (standard deviations) for each county, excluding NA values. Takes the mean of these standard deviations and divides it by the square root of sample size of each county. Provides estimate of variability between counties.
+cty.sds.sep = sqrt(tapply(y,county,var)/sample.size) # Calculates the standard deviation of log-transformed radon levels within each county. Divides the county-specific variances by the corresponding sample sizes and takes the square root. This provides an estiamte of hte variability within each county.
+
+ # varying-intercept model, no predictors
+
+radon.data <- list ("n", "J", "y", "county")
+radon.inits <- function (){
+  list (a=rnorm(J), mu.a=rnorm(1),
+        sigma.y=runif(1), sigma.a=runif(1))
+} # Defines a function that generates initial values for the model parameters and creates a list with the values: 1. a(vector of random normal values for county-specific effects - J values). 2. mu.a(Sing random value for the mean of the county effects). 3. sigma.y(Single random uniform value for the standard deviation of the radon measurements within counties). sigma.a(Single random uniform value for the standard deviation of the county effects).
+
+radon.parameters <- c ("a", "mu.a", "sigma.y", "sigma.a") # Specifies the name of the parameters to be monitored and returned by the model. These are the same parameters for which initial values were defined.
+
+
+BUGS_DIR <- "C:/Users/conno/OneDrive - University of Georgia/Amy_Connor_Zambia/Gelman_MultilevelModeling/Gelman_MultModel/code/radon.multilevel.nopred.txt"
+
+
+mlm.radon.nopred <- bugs (radon.data, radon.inits, radon.parameters,  n.chains=3, 
+ "radon.multilevel.nopred.txt", bugs.directory=BUGS_DIR,
+    working.directory=NULL, clearWD=TRUE, n.iter=10, debug=TRUE) # Calls the bugs function to run the Bayesian multilevel model. radon.data are the list of data for the model. radon.inits is the function to generate initial values. radon.parameters is the vector of parameter names to monitor. n.chaims = 3 is the number of MCMC chains to run. radon.multilevel.nopred.bu is the name of the WinBUGS model file
+
+
+
+
+
+## Figure 12.1 (a)
+
+par(mfrow=c(1,2))
+plot (sample.size.jittered, cty.mns, cex.lab=.9, cex.axis=1,
+      xlab="sample size in county j",
+      ylab="avg. log radon in county j",
+      pch=20, log="x", cex=.3, mgp=c(1.5,.5,0),
+      ylim=c(0,3.2), yaxt="n", xaxt="n")
+axis (1, c(1,3,10,30,100), cex.axis=.9, mgp=c(1.5,.5,0))
+axis (2, seq(0,3), cex.axis=.9, mgp=c(1.5,.5,0))
+for (j in 1:J){
+  lines (rep(sample.size.jittered[j],2),
+         cty.mns[j] + c(-1,1)*cty.sds[j], lwd=.5)
+#         cty.mns[j] + c(-1,1)*mean(cty.sds[!is.na(cty.sds)]), lwd=.5)
+}
+abline(h=mlm.radon.nopred$median$mu.a)
+title("No pooling",cex.main=.9, line=1)
+#abline(h=ybarbar)
+points(sample.size.jittered[36],cty.mns[36],cex=4)
+
+## Figure 12.1 (b)
+
+plot (sample.size.jittered, mlm.radon.nopred$median$a, cex.lab=.9, cex.axis=1,
+      xlab="sample size in county j",
+      ylab="avg. log radon in county j",
+      pch=20, log="x", cex=.3, mgp=c(1.5,.5,0),
+      ylim=c(0,3.2), yaxt="n", xaxt="n")
+axis (1, c(1,3,10,30,100), cex.axis=.9, mgp=c(1.5,.5,0))
+axis (2, seq(0,3), cex.axis=.9, mgp=c(1.5,.5,0))
+for (j in 1:J){
+  lines (rep(sample.size.jittered[j],2),
+         mlm.radon.nopred$median$a[j] + c(-1,1)*mlm.radon.nopred$sd$a[j],
+      lwd=.5)
+}
+abline(h=mlm.radon.nopred$median$mu.a)
+points(sample.size.jittered[36],mlm.radon.nopred$median$a[36],cex=4)#,col="red")
+title("Multilevel model",cex.main=.9, line=1)
+
+
+```
+
+
+
+## 12.4
+
+Quickly fitting multilevel models in R. Skipped previous pooling sections in the book.
+```{r}
+# The lmer function from lme4 package.
+
+## Varying-intercept model with no predictors. (The varying intercept model with no predictors can be fit and displayed using lmer() as follows:)
+
+null_model <- lme4::lmer(formula = y ~ 1 + (1 | county))
+
+arm::display(null_model)
+
+
+```

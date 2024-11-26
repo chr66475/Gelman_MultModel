@@ -1,0 +1,10 @@
+---
+title: "Data Analysis Using Regression and Multilevel/Hierarchical Models"
+author: "Ross, Connor"
+format: pdf
+editor: visual
+---
+
+# Notes/Practice code for book: ***Data Analysis Using Regression and Multilevel/Hierarchical Models***
+
+Book Authors: Andrew Gelman & Jennifer Hill

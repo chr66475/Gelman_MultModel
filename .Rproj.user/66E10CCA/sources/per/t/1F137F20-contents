@@ -1,0 +1,23 @@
+import os
+from pathlib import Path
+
+output_dir = os.getenv("QUARTO_PROJECT_OUTPUT_DIR")
+output_files = os.getenv("QUARTO_PROJECT_OUTPUT_FILES").split()
+
+output_dir_path = Path(output_dir)
+
+for file in output_files:
+  file_path = Path(file)
+  new_file_path = Path(output_dir_path, file_path.name)
+  
+  if new_file_path == file_path:
+    continue
+  
+  if new_file_path.exists():
+    new_file_path.unlink()
+  
+  file_path.rename(new_file_path)
+  
+for path in output_dir_path.iterdir():
+  if path.is_dir() and not any(path.iterdir()):
+    path.rmdir()
