@@ -123,12 +123,19 @@ radon.inits <- function (){
 radon.parameters <- c ("a", "mu.a", "sigma.y", "sigma.a") # Specifies the name of the parameters to be monitored and returned by the model. These are the same parameters for which initial values were defined.
 
 
-BUGS_DIR <- "C:/Users/conno/Documents/repos/Gelman_MultModel/Gelman_MultModel/code/radon.multilevel.nopred.txt"
+BUGS_DIR <- "C:/Program Files (x86)/OpenBUGS/OpenBUGS323/OpenBUGS.exe"
 
 
-mlm.radon.nopred <- bugs (radon.data, radon.inits, radon.parameters,  n.chains=3, 
- "radon.multilevel.nopred.txt", bugs.directory=BUGS_DIR,
-    working.directory=NULL, clearWD=TRUE, n.iter=10, debug=TRUE) # Calls the bugs function to run the Bayesian multilevel model. radon.data are the list of data for the model. radon.inits is the function to generate initial values. radon.parameters is the vector of parameter names to monitor. n.chaims = 3 is the number of MCMC chains to run. radon.multilevel.nopred.bu is the name of the WinBUGS model file
+mlm.radon.nopred <- R2OpenBUGS::bugs(
+  data = radon.data,
+  inits = radon.inits,
+  parameters.to.save = radon.parameters,
+  n.chains=3,
+  model.file = "radon.multilevel.nopred.txt",
+  OpenBUGS.pgm = BUGS_DIR,
+  n.iter=10,
+  debug=TRUE
+) # Calls the bugs function to run the Bayesian multilevel model. radon.data are the list of data for the model. radon.inits is the function to generate initial values. radon.parameters is the vector of parameter names to monitor. n.chaims = 3 is the number of MCMC chains to run. radon.multilevel.nopred.bu is the name of the WinBUGS model file
 
 
 
