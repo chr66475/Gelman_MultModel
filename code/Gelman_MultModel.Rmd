@@ -183,6 +183,10 @@ title("Multilevel model",cex.main=.9, line=1)
 ```
 
 
+From the book:
+
+
+
 
 ## 12.4
 
