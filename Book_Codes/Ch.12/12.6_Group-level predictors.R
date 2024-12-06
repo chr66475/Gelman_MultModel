@@ -7,6 +7,8 @@
 source("12.3_Partial pooling with predictors.R") # where variables were defined
 # close the Bugs window to proceed
 
+
+
 ## Get the county-level predictor
 srrs2.fips <- srrs2$stfips*1000 + srrs2$cntyfips
 cty <- read.table ("cty.dat", header=T, sep=",")
